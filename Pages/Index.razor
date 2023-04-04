@@ -1,0 +1,91 @@
+﻿@page "/"
+@inject HttpClient Http
+
+
+<div class="GHSSearch">
+    <div class="GHSSearch__content">
+        <div class="GHSSearch__content__left">
+            <p><b>GHS @UserNum</b></p>
+            <b>Title:</b>
+            <p>@activeSongTitle</p>
+        </div>
+        <div class="GHSSearch__content__right">
+            <b>Lyrics:</b>
+            <p> @activeSongLyrics</p>
+        </div>
+    </div>
+    <div class="GHSSearch__input">
+        <input type="text" @bind="@UserNum" @bind:event="oninput" placeholder="Enter GHS number..."/>
+    </div>
+    <textarea></textarea>
+</div>
+
+
+
+@code {
+    private int? _userNum;
+    public int? UserNum
+    {
+        get { return _userNum; }
+        set
+        {
+            string valueStr = value.ToString()!;
+
+            if (valueStr.All(char.IsDigit))
+            {
+                int num = Convert.ToInt32(value);
+
+                if (num > 0 && num <= songLyrics!.Length)
+                {
+                    _userNum = num;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(valueStr) || valueStr == string.Empty)
+            {
+                _userNum = null;
+            }
+
+            UpdateSong();
+        }
+    }
+
+    string activeSongTitle = string.Empty;
+    string activeSongLyrics = string.Empty;
+    string activeSongPath = string.Empty;
+
+
+    public Dictionary<int, string> songTitles = new Dictionary<int, string>();
+    public string[]? songLyrics;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // this func is called before the initial render of the page --> part of the component lifecycle
+
+        string[] csvData = (await Http.GetStringAsync("data/GHSInfo.csv")).Replace("/",",").Split('\n');
+
+        songLyrics = new string[csvData.Length];    
+        List<string> songLyricsList = new List<string>();
+
+        for (int i = 1; i < csvData.Length; i++) // start at index 1 to avoid headers and deal with weird file naming (starts at 1, not 0)
+        {
+            // read the song title to songTitles Dict
+            string[] row = csvData[i].Split(',');
+            string songTitle = row[1];
+            songTitles.Add(i, songTitle);
+
+            // read the song lyrics to songLyrics array
+            string lyrics = await Http.GetStringAsync($"data/lyrics/GHS {i}.txt");
+            songLyricsList.Add(lyrics);
+        }
+
+        songLyrics = songLyricsList.ToArray();
+    }
+
+    private void UpdateSong()
+    {
+        activeSongLyrics = (UserNum.HasValue) ? songLyrics![UserNum.Value - 1] : string.Empty;
+        activeSongTitle = (UserNum.HasValue) ? songTitles[UserNum.Value] : string.Empty;
+        activeSongPath = (UserNum.HasValue) ? $"GHS {UserNum.Value}.mp3" : string.Empty;
+    }
+}
