@@ -22,13 +22,13 @@ html, body {
 }
 
 .GHSSearch__content__left {
-    width: 40%;
+    width: 45%;
     margin: 0 auto;
     background-color: #6495ED;
     border-radius: 10px;
 }
 .GHSSearch__content__right {
-    width: 40%;
+    width: 45%;
     margin: 0 auto;
     background-color: #6495ED;
     border-radius: 10px;
